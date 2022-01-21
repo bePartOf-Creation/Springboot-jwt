@@ -47,16 +47,26 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         String authorizationHeader = request.getHeader(HEADER_STRING);
         if (authorizationHeader != null && authorizationHeader.startsWith(TOKEN_PREFIX)) {
             try{
+                //Retrieve access token form the Header
                 String token = authorizationHeader.substring(TOKEN_PREFIX.length());
+                // Our Signature
                 Algorithm algorithm = Algorithm.HMAC256(SECRET.getBytes());
+
+                //Verifying our signature(Algorithm)
                 JWTVerifier verifier = JWT.require(algorithm).build();
+
+                // Decoding the token , to retrieve the logged-in user(username,password and Its roles for authorization)
                 DecodedJWT decodedJWT = verifier.verify(token);
                 String username = decodedJWT.getSignature();
                 String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+
+                // Granting authority to user role
                 Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
                 stream(roles).forEach(role -> {
                     authorities.add(new SimpleGrantedAuthority(role));
                 });
+
+                //
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(username,null,authorities);
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
